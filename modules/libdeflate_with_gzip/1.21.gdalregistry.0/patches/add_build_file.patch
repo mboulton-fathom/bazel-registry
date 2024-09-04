@@ -1,6 +1,6 @@
 --- /dev/null
 +++ BUILD.bazel
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,60 @@
 +# SPDX-License-Identifier: BSD-3-Clause
 +# Copyright (c) Contributors to the OpenEXR Project.
 +
@@ -52,6 +52,12 @@
 +
 +alias(
 +    name = "libdeflate",
++    actual = ":deflate",
++    visibility = ["//visibility:public"],
++)
++
++alias(
++    name = "libdeflate_with_gzip",
 +    actual = ":deflate",
 +    visibility = ["//visibility:public"],
 +)

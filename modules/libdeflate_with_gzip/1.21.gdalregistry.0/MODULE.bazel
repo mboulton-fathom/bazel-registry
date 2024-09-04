@@ -1,5 +1,5 @@
 module(
-    name = "libdeflate",
+    name = "libdeflate_with_gzip",
     version = "1.21.gdalregistry.0",
     compatibility_level = 1,
 )
