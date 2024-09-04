@@ -1,0 +1,5 @@
+module(
+    name = "libdeflate",
+    version = "1.21.gdalregistry.0",
+    compatibility_level = 1,
+)
