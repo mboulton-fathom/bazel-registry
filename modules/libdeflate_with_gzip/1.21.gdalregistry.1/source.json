@@ -4,7 +4,7 @@
     "strip_prefix": "libdeflate-1.21",
     "patch_strip": 0,
     "patches": {
-        "add_build_file.patch": "sha256-fmX/WuLQrAMoXm/lyPaAe1DCFSKJAbXUOmYmUOF1Ze0=",
+        "add_build_file.patch": "sha256-9bs8vdnkAeHQRL43m/x6CD9v/V3/VCzFh2xJOSsNgfo=",
         "module_dot_bazel.patch": "sha256-FjhUzXgZSc6OJg8ESboAOgetikb799NoSgKSK2FdYlA="
     }
 }
