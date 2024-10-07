@@ -1,4 +1,0 @@
-module(
-    name = "proj",
-    version = "9.4.1.gdalregistry.2",
-)

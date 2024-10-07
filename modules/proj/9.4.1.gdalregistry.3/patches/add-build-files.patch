@@ -1,0 +1,161 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+new file mode 100644
+index 00000000..0ca86779
+--- /dev/null
++++ b/BUILD.bazel
+@@ -0,0 +1,56 @@
++package(default_visibility = ["//:__subpackages__"])
++
++load("@rules_cc//cc:defs.bzl", "cc_library")
++load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template_rule")
++
++expand_template_rule(
++    # A unique name for this target.
++    name = "proj_config_generate",
++    # The template file to expand.
++    out = "proj_config.h",
++    substitutions = {
++        "#cmakedefine VERSION \"${VERSION}\"": "",
++        "cmakedefine": "define",
++        "${PACKAGE}": "proj",
++        "${PACKAGE_BUGREPORT}": "",
++        "${PACKAGE_NAME}": "proj",
++        "${PACKAGE_TARNAME}": "proj",
++        "${PACKAGE_VERSION}": "0.0.1",
++        # "${VERSION}": "9.3.1",
++        "${PACKAGE_STRING}": "proj-9.3.1",
++    },
++    template = "cmake/proj_config.cmake.in",
++)
++
++cc_library(
++    name = "proj",
++    srcs = glob(
++        [
++            "src/**/*.cpp",
++            "src/**/*.c",
++        ],
++        allow_empty = False,
++        exclude = [
++            "src/tests/*",
++            "src/apps/*",
++        ],
++    ),
++    hdrs = glob(
++        [
++            "src/**/*.h",
++            "src/**/*.hpp",
++            "include/**/*.hpp",
++        ],
++        allow_empty = False,
++    ) + [":proj_config_generate"],
++    copts = [
++        "-I.",
++        "-I$(GENDIR)",
++    ],
++    includes = [
++        "include",
++        "src",
++    ],
++    visibility = ["//visibility:public"],
++    deps = ["@sqlite3"],
++)
+diff --git a/MODULE.bazel b/MODULE.bazel
+new file mode 100644
+index 00000000..27638351
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,9 @@
++module(
++    name = "proj",
++    version = "9.4.1",
++)
++
++bazel_dep(name = "buildozer", version = "7.1.2")
++bazel_dep(name = "aspect_bazel_lib", version = "2.7.8")
++bazel_dep(name = "rules_cc", version = "0.0.9")
++bazel_dep(name = "sqlite3", version = "3.42.0.bcr.1")
+diff --git a/data/BUILD.bazel b/data/BUILD.bazel
+new file mode 100644
+index 00000000..61fde17b
+--- /dev/null
++++ b/data/BUILD.bazel
+@@ -0,0 +1,78 @@
++load("@aspect_bazel_lib//lib:tar.bzl", "tar")
++
++genrule(
++    name = "gen_proj_db",
++    srcs = [
++        "sql/begin.sql",
++        "sql/proj_db_table_defs.sql",
++        "sql/consistency_checks_triggers.sql",
++        "sql/conversion_triggers.sql",
++        "sql/customizations_early.sql",
++        "sql/metadata.sql",
++        "sql/unit_of_measure.sql",
++        "sql/extent.sql",
++        "sql/scope.sql",
++        "sql/coordinate_system.sql",
++        "sql/axis.sql",
++        "sql/ellipsoid.sql",
++        "sql/prime_meridian.sql",
++        "sql/geodetic_datum.sql",
++        "sql/geodetic_datum_ensemble_member.sql",
++        "sql/vertical_datum.sql",
++        "sql/vertical_datum_ensemble_member.sql",
++        "sql/conversion.sql",
++        "sql/geodetic_crs.sql",
++        "sql/projected_crs.sql",
++        "sql/vertical_crs.sql",
++        "sql/compound_crs.sql",
++        "sql/helmert_transformation.sql",
++        "sql/grid_transformation.sql",
++        "sql/grid_transformation_custom.sql",
++        "sql/other_transformation.sql",
++        "sql/other_transformation_custom.sql",
++        "sql/concatenated_operation.sql",
++        "sql/concatenated_operation_step.sql",
++        "sql/alias_name.sql",
++        "sql/supersession.sql",
++        "sql/deprecation.sql",
++        "sql/esri.sql",
++        "sql/ignf.sql",
++        "sql/nkg.sql",
++        "sql/iau.sql",
++        "sql/nrcan.sql",
++        "sql/grid_alternatives.sql",
++        "sql/grid_alternatives_generated_noaa.sql",
++        "sql/nadcon5_concatenated_operations.sql",
++        "sql/customizations.sql",
++        "sql/nkg_post_customizations.sql",
++        "sql/commit.sql",
++    ],
++    outs = [
++        "proj.db",
++    ],
++    cmd = """
++set -eu
++cat $(SRCS) > all.sql
++sed -i 's/$${PROJ_VERSION}/9.3.1/g' all.sql
++$(location @sqlite3//:shell) $(location proj.db) < all.sql
++    """,
++    tools = ["@sqlite3//:shell"],
++)
++
++tar(
++    name = "data",
++    srcs = [
++        "CH",
++        "GL27",
++        "ITRF2000",
++        "ITRF2008",
++        "ITRF2014",
++        "nad.lst",
++        "nad27",
++        "nad83",
++        "other.extra",
++        "world",
++        ":proj.db",
++    ],
++    visibility = ["//visibility:public"],
++)

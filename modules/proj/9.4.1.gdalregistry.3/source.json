@@ -1,0 +1,8 @@
+{
+  "type": "git_repository",
+  "remote": "https://github.com/OSGeo/PROJ.git",
+  "tag": "9.4.1",
+  "patches": {
+    "add-build-files.patch": "sha256-do8h8Ba9d1mlpVGyg5M40esnkZSTuxH0uq4156Y8EW8="
+  }
+}
