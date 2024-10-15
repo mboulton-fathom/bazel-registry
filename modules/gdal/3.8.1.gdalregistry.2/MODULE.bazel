@@ -1,4 +1,0 @@
-module(
-    name = "gdal",
-    version = "3.8.1.gdalregistry.2",
-)

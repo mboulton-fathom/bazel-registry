@@ -1,12 +1,7 @@
 {
-    "homepage": "https://github.com/OSGeo/PROJ",
-    "maintainers": [
-    ],
-    "repository": [
-        "github:OSGeo/PROJ"
-    ],
-    "versions": [
-        "9.4.1.gdalregistry.3"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/OSGeo/PROJ",
+  "maintainers": [],
+  "repository": ["github:OSGeo/PROJ"],
+  "versions": ["9.4.1.gdalregistry.3"],
+  "yanked_versions": {}
 }

@@ -1,12 +1,7 @@
 {
-    "homepage": "https://github.com/OSGeo/gdal",
-    "maintainers": [
-    ],
-    "repository": [
-        "github:OSGeo/gdal"
-    ],
-    "versions": [
-        "3.8.1.gdalregistry.2"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/OSGeo/gdal",
+  "maintainers": [],
+  "repository": ["github:OSGeo/gdal"],
+  "versions": ["3.9.1.gdalregistry.1"],
+  "yanked_versions": {}
 }

@@ -1,8 +1,10 @@
 {
-  "type": "git_repository",
-  "remote": "https://github.com/OSGeo/PROJ.git",
-  "tag": "9.4.1",
+  "type": "archive",
+  "url": "https://github.com/OSGeo/PROJ/archive/refs/tags/9.4.1.tar.gz",
+  "integrity": "sha256-XuKIgDccxzfBYznqged9a0ZUOaV6+YMh6P4+3QDnCgg=",
   "patches": {
-    "add-build-files.patch": "sha256-do8h8Ba9d1mlpVGyg5M40esnkZSTuxH0uq4156Y8EW8="
-  }
+    "add-build-files.patch": "sha256-ZvpO6fHSQ76t1bdf57qA9MUdQtCPZ2yK+p0f7UAqtFk="
+  },
+  "strip_prefix": "PROJ-9.4.1",
+  "patch_strip": 1
 }

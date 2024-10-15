@@ -1,0 +1,10 @@
+{
+  "type": "archive",
+  "url": "https://github.com/OSGeo/gdal/archive/refs/tags/v3.9.1.tar.gz",
+  "integrity": "sha256-ONhE6OMh4bsb/IcRh0CyjKEL/Itp51Sg9fItSf7MoOQ=",
+  "patches": {
+    "add-build-files.patch": "sha256-g/QrSSTbo8Gt1xaYCOTP5jccHMnoxKmQpMw9l60sVc8="
+  },
+  "strip_prefix": "gdal-3.9.1",
+  "patch_strip": 1
+}

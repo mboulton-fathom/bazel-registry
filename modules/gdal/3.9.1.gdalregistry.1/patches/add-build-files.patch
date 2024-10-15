@@ -1,0 +1,1478 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+new file mode 100644
+index 0000000000..a955a7bf77
+--- /dev/null
++++ b/BUILD.bazel
+@@ -0,0 +1,80 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++# Dependencies for apps
++DEP_FOLDERS = [
++    "alg",
++    "alg/internal_libqhull",
++    "alg/marching_squares",
++    "frmts/derived",
++    "frmts/gtiff",
++    "frmts/gtiff/libgeotiff",
++    "frmts/gtiff/libtiff",
++    "frmts/mem",
++    "frmts/hfa",
++    "frmts/vrt",
++    "gcore",
++    "gcore/mdreader",
++    "gnm",
++    "gnm/gnm_frmts",
++    "ogr",
++    "ogr/ogrsf_frmts",
++    "ogr/ogrsf_frmts/generic",
++    "ogr/ogrsf_frmts/mem",
++    "ogr/ogrsf_frmts/geojson",
++    "ogr/ogrsf_frmts/kml",
++    "ogr/ogrsf_frmts/shape",
++    "ogr/ogrsf_frmts/csv",
++    "ogr/ogrsf_frmts/vrt",
++    "ogr/ogrsf_frmts/geojson/libjson",
++    "ogr/ogrsf_frmts/mitab",
++    "port",
++    "third_party/LercLib",
++    "third_party/fast_float",
++]
++
++cc_library(
++    name = "gdal_core",
++    srcs = [
++        "//{}".format(d)
++        for d in DEP_FOLDERS
++    ] + ["//frmts"],
++    hdrs = [
++        "//{}:headers".format(d)
++        for d in DEP_FOLDERS
++    ] + [
++        "//alg:polygonize_polygonizer.cpp",
++        "//apps:headers",
++    ],
++    defines = [
++        "GDAL_COMPILATION",
++        "HAVE_LIBZ",
++        "HAVE_SSE_AT_COMPILE_TIME",
++        "HAVE_LIBDEFLATE",
++        "ZIP_SUPPORT",
++        "CPL_LSB=1",
++        # Gdal drivers
++        "FRMT_gtiff",
++        "FRMT_vrt",
++        "FRMT_mem",
++        # OGR drivers
++        "CSV_ENABLED",
++        "MEM_ENABLED",
++        "KML_ENABLED",
++        "VRT_ENABLED",
++        "SHAPE_ENABLED",
++    ],
++    includes = DEP_FOLDERS + [
++        "$(GENDIR)/gcore",
++        "$(GENDIR)/port",
++        "apps",
++    ],
++    deps = [
++        "@curl",
++        "@libdeflate_with_gzip",
++        "@proj",
++        "@sqlite3",
++        "@zlib",
++    ],
++)
+diff --git a/alg/BUILD.bazel b/alg/BUILD.bazel
+new file mode 100644
+index 0000000000..1382f9a17e
+--- /dev/null
++++ b/alg/BUILD.bazel
+@@ -0,0 +1,25 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++    ]),
++)
++
++filegroup(
++    name = "alg",
++    srcs = glob(
++        [
++            "*.cpp",
++            "*.c",
++        ],
++        allow_empty = False,
++        exclude = [
++            "polygonize_polygonizer.cpp",
++            #            "polygonize_polygonizer_impl.cpp",
++        ],
++    ),
++)
++
++exports_files(["polygonize_polygonizer.cpp"])
+diff --git a/alg/internal_libqhull/BUILD.bazel b/alg/internal_libqhull/BUILD.bazel
+new file mode 100644
+index 0000000000..a3a9183df9
+--- /dev/null
++++ b/alg/internal_libqhull/BUILD.bazel
+@@ -0,0 +1,11 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob(["*.h"]),
++)
++
++filegroup(
++    name = "internal_libqhull",
++    srcs = glob(["*.c"]),
++)
+diff --git a/alg/marching_squares/BUILD.bazel b/alg/marching_squares/BUILD.bazel
+new file mode 100644
+index 0000000000..84a1988b1d
+--- /dev/null
++++ b/alg/marching_squares/BUILD.bazel
+@@ -0,0 +1,14 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob(
++        ["*.h"],
++        allow_empty = False,
++    ),
++)
++
++filegroup(
++    name = "marching_squares",
++    srcs = [":headers"],
++)
+diff --git a/apps/BUILD.bazel b/apps/BUILD.bazel
+new file mode 100644
+index 0000000000..e84c6136d4
+--- /dev/null
++++ b/apps/BUILD.bazel
+@@ -0,0 +1,78 @@
++load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
++load("//apps:gdal_app.bzl", "gdal_app")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++cc_library(
++    name = "apps",
++    srcs = glob(
++        [
++            "*_lib.cpp",
++        ],
++        exclude = [
++            "gdal_app.cpp",
++            "gdal_app_lib.cpp",
++        ],
++    ) + [
++        "commonutils.cpp",
++        "gdalargumentparser.cpp",
++        "nearblack_lib_floodfill.cpp",
++    ],
++    hdrs = [
++        "//apps:headers",
++        "//apps/argparse:headers",
++    ],
++    defines = ["GDAL_COMPILATION"],
++    deps = [
++        "//:gdal_core",
++    ],
++)
++
++gdal_app(
++    name = "gdalinfo",
++    srcs = [
++        ":gdalinfo_bin.cpp",
++    ],
++)
++
++gdal_app(
++    name = "gdallocationinfo",
++    srcs = [
++        ":gdallocationinfo.cpp",
++    ],
++)
++
++gdal_app(
++    name = "gdalwarp",
++    srcs = [
++        ":gdalwarp_bin.cpp",
++    ],
++)
++
++gdal_app(
++    name = "gdal_translate",
++    srcs = [
++        ":gdal_translate_bin.cpp",
++    ],
++)
++
++gdal_app(
++    name = "ogr2ogr",
++    srcs = [
++        ":ogr2ogr_bin.cpp",
++    ],
++)
++
++alias(
++    name = "gdal_calc.py",
++    actual = "//swig/python/gdal-utils/osgeo_utils:gdal_calc",
++    visibility = ["//visibility:public"],
++)
+diff --git a/apps/app_wrapper.go b/apps/app_wrapper.go
+new file mode 100644
+index 0000000000..2f391fe36c
+--- /dev/null
++++ b/apps/app_wrapper.go
+@@ -0,0 +1,108 @@
++package main
++
++import (
++    "archive/tar"
++    "errors"
++    "fmt"
++    "io"
++    "os"
++    "os/exec"
++    "path/filepath"
++
++    "github.com/bazelbuild/rules_go/go/runfiles"
++    "github.com/bazelbuild/rules_go/go/tools/bazel"
++)
++
++var WrappedBinary string
++
++func main() {
++    err := run()
++    if err != nil {
++        panic(err)
++    }
++}
++
++func run() error {
++    if WrappedBinary == "" {
++        return errors.New("no WrappedBinary defined")
++    }
++
++    r, err := runfiles.New()
++    if err != nil {
++        return fmt.Errorf("runfiles.New(): %w", err)
++    }
++
++    binPath, err := r.Rlocation(fmt.Sprintf("gdal+/apps/%s", WrappedBinary))
++    if err != nil {
++        return fmt.Errorf("%T.Rlocation(): %w", r, err)
++    }
++
++    cmd := exec.Command(binPath, os.Args[1:]...)
++    cmd.Env = append(cmd.Env, r.Env()...)
++    gdalData, err := r.Rlocation("gdal+/gcore/data")
++    if !exists(gdalData) {
++        return fmt.Errorf("couldn't locate gdal data at %s", gdalData)
++    }
++    cmd.Env = append(cmd.Env, fmt.Sprintf("GDAL_DATA=%s", gdalData))
++
++    projDataTar, err := r.Rlocation("proj/data/data.tar")
++    if !exists(gdalData) {
++        return fmt.Errorf("couldn't locate proj data at %s", projDataTar)
++    }
++    projTmp, err := os.MkdirTemp(bazel.TestTmpDir(), "")
++    if err != nil {
++        return fmt.Errorf("os.MkdirTemp(): %w", err)
++    }
++    defer os.RemoveAll(projTmp)
++
++    reader, err := os.Open(projDataTar)
++    if err != nil {
++        return fmt.Errorf("os.Open(): %w", err)
++    }
++
++    tarReader := tar.NewReader(reader)
++    for {
++        header, err := tarReader.Next()
++        if err != nil {
++            if err == io.EOF {
++                break
++            }
++            return fmt.Errorf("%T.Next(): %w", tarReader, err)
++        }
++
++        switch header.Typeflag {
++        case tar.TypeDir:
++            if err := os.Mkdir(filepath.Join(projTmp, header.Name), 0744); err != nil {
++                return fmt.Errorf("os.Mkdir(): %w", err)
++            }
++
++        case tar.TypeReg:
++            outFile, err := os.Create(filepath.Join(projTmp, header.Name))
++            if err != nil {
++                return fmt.Errorf("os.Create(): %w", err)
++            }
++            if _, err := io.Copy(outFile, tarReader); err != nil {
++                return fmt.Errorf("io.Copy(): %w", err)
++            }
++            _ = outFile.Close()
++
++        default:
++            return fmt.Errorf("unknown type: %v in %s", header.Typeflag, header.Name)
++        }
++    }
++
++    cmd.Env = append(cmd.Env, fmt.Sprintf("PROJ_DATA=%s", filepath.Join(projTmp, "data")))
++
++    cmd.Stdout = os.Stdout
++    cmd.Stderr = os.Stderr
++    cmd.Stdin = os.Stdin
++
++    return cmd.Run()
++}
++
++func exists(path string) bool {
++    if _, err := os.Stat(path); err != nil {
++        return false
++    }
++    return true
++}
+diff --git a/apps/argparse/BUILD.bazel b/apps/argparse/BUILD.bazel
+new file mode 100644
+index 0000000000..41f39ea1a5
+--- /dev/null
++++ b/apps/argparse/BUILD.bazel
+@@ -0,0 +1,6 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = [":argparse.hpp"],
++)
+diff --git a/apps/gdal_app.bzl b/apps/gdal_app.bzl
+new file mode 100644
+index 0000000000..7ac7e548ba
+--- /dev/null
++++ b/apps/gdal_app.bzl
+@@ -0,0 +1,36 @@
++load("@rules_cc//cc:defs.bzl", "cc_binary")
++load("@rules_go//go:def.bzl", "go_binary")
++
++def gdal_app(*, name, deps = [], **kwargs):
++    raw_name = "_{}".format(name)
++
++    cc_binary(
++        name = raw_name,
++        defines = ["GDAL_COMPILATION"],
++        deps = deps + [
++            "//apps",
++        ],
++        visibility = ["//visibility:private"],
++        **kwargs
++    )
++
++    go_binary(
++        name = name,
++        data = [
++            "//gcore:data",
++            "@proj//data",
++            raw_name,
++        ],
++        x_defs = {
++            "github.com/mboulton-fathom/gdal/apps.WrappedBinary": raw_name,
++        },
++        srcs = [
++            "app_wrapper.go",
++        ],
++        importpath = "github.com/mboulton-fathom/gdal/apps",
++        deps = [
++            "@rules_go//go/runfiles:go_default_library",
++            "@rules_go//go/tools/bazel:go_default_library",
++        ],
++        visibility = ["//visibility:public"],
++    )
+diff --git a/cmake/template/BUILD.bazel b/cmake/template/BUILD.bazel
+new file mode 100644
+index 0000000000..5f28959aab
+--- /dev/null
++++ b/cmake/template/BUILD.bazel
+@@ -0,0 +1,6 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "cpl_config_template",
++    srcs = [":cpl_config.h.in"],
++)
+diff --git a/frmts/BUILD.bazel b/frmts/BUILD.bazel
+new file mode 100644
+index 0000000000..770080804c
+--- /dev/null
++++ b/frmts/BUILD.bazel
+@@ -0,0 +1,10 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "frmts",
++    srcs = glob([
++        "*.cpp",
++    ]),
++)
+diff --git a/frmts/derived/BUILD.bazel b/frmts/derived/BUILD.bazel
+new file mode 100644
+index 0000000000..e74953771b
+--- /dev/null
++++ b/frmts/derived/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "derived",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/frmts/gtiff/BUILD.bazel b/frmts/gtiff/BUILD.bazel
+new file mode 100644
+index 0000000000..580a49a678
+--- /dev/null
++++ b/frmts/gtiff/BUILD.bazel
+@@ -0,0 +1,28 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "gtiff",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++        exclude = [
++            "*jxl*",
++            "*quant*",
++        ],
++    ) + [
++        ":headers",
++        #        "//port:cpl_md5.cpp",
++    ],
++)
+diff --git a/frmts/gtiff/libgeotiff/BUILD.bazel b/frmts/gtiff/libgeotiff/BUILD.bazel
+new file mode 100644
+index 0000000000..e580288617
+--- /dev/null
++++ b/frmts/gtiff/libgeotiff/BUILD.bazel
+@@ -0,0 +1,18 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "libgeotiff",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++        "*.inc",
++    ]),
++)
+diff --git a/frmts/gtiff/libtiff/BUILD.bazel b/frmts/gtiff/libtiff/BUILD.bazel
+new file mode 100644
+index 0000000000..80d20d0225
+--- /dev/null
++++ b/frmts/gtiff/libtiff/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "libtiff",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/frmts/hfa/BUILD.bazel b/frmts/hfa/BUILD.bazel
+new file mode 100644
+index 0000000000..086c018841
+--- /dev/null
++++ b/frmts/hfa/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "hfa",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/frmts/mem/BUILD.bazel b/frmts/mem/BUILD.bazel
+new file mode 100644
+index 0000000000..1bced7ca16
+--- /dev/null
++++ b/frmts/mem/BUILD.bazel
+@@ -0,0 +1,18 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob(["*.h"]),
++)
++
++filegroup(
++    name = "mem",
++    srcs = glob(
++        [
++            "*.cpp",
++        ],
++        allow_empty = False,
++    ),
++)
+diff --git a/frmts/vrt/BUILD.bazel b/frmts/vrt/BUILD.bazel
+new file mode 100644
+index 0000000000..26a536a3e8
+--- /dev/null
++++ b/frmts/vrt/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "vrt",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/gcore/BUILD.bazel b/gcore/BUILD.bazel
+new file mode 100644
+index 0000000000..3eac48267f
+--- /dev/null
++++ b/gcore/BUILD.bazel
+@@ -0,0 +1,41 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++genrule(
++    name = "gdal_version_header",
++    srcs = ["gdal_version.h.in"],
++    outs = ["gdal_version.h"],
++    cmd = """cat $< > $@""",
++)
++
++genrule(
++    name = "gdal_version_subfolder_header",
++    srcs = ["gdal_version.h.in"],
++    outs = ["gdal_version_full/gdal_version.h"],
++    cmd = """cat $< > $@""",
++)
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]) + [
++        "gdal_version_header",
++        "gdal_version_subfolder_header",
++    ],
++)
++
++filegroup(
++    name = "gcore",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
++
++filegroup(
++    name = "data",
++    srcs = glob(["data/*.json"]),
++)
+diff --git a/gcore/mdreader/BUILD.bazel b/gcore/mdreader/BUILD.bazel
+new file mode 100644
+index 0000000000..0887fc5ebe
+--- /dev/null
++++ b/gcore/mdreader/BUILD.bazel
+@@ -0,0 +1,16 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++    ]),
++)
++
++filegroup(
++    name = "mdreader",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/gnm/BUILD.bazel b/gnm/BUILD.bazel
+new file mode 100644
+index 0000000000..47bb6caa8d
+--- /dev/null
++++ b/gnm/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "gnm",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/gnm/gnm_frmts/BUILD.bazel b/gnm/gnm_frmts/BUILD.bazel
+new file mode 100644
+index 0000000000..9ee97a9228
+--- /dev/null
++++ b/gnm/gnm_frmts/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "gnm_frmts",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/BUILD.bazel b/ogr/BUILD.bazel
+new file mode 100644
+index 0000000000..c3f29350ad
+--- /dev/null
++++ b/ogr/BUILD.bazel
+@@ -0,0 +1,26 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "ogr",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++        exclude = [
++            "ogr_capi_test.c",
++            "test_geo_utils.cpp",
++            "generate_encoding_table.c",
++        ],
++    ),
++)
+diff --git a/ogr/ogrsf_frmts/BUILD.bazel b/ogr/ogrsf_frmts/BUILD.bazel
+new file mode 100644
+index 0000000000..e92b931651
+--- /dev/null
++++ b/ogr/ogrsf_frmts/BUILD.bazel
+@@ -0,0 +1,17 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++    ]),
++)
++
++filegroup(
++    name = "ogrsf_frmts",
++    srcs = [
++        ":headers",
++    ],
++)
+diff --git a/ogr/ogrsf_frmts/csv/BUILD.bazel b/ogr/ogrsf_frmts/csv/BUILD.bazel
+new file mode 100644
+index 0000000000..589d9c0d19
+--- /dev/null
++++ b/ogr/ogrsf_frmts/csv/BUILD.bazel
+@@ -0,0 +1,21 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "csv",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++    ),
++)
+diff --git a/ogr/ogrsf_frmts/generic/BUILD.bazel b/ogr/ogrsf_frmts/generic/BUILD.bazel
+new file mode 100644
+index 0000000000..132f2fc95a
+--- /dev/null
++++ b/ogr/ogrsf_frmts/generic/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "generic",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/ogrsf_frmts/geojson/BUILD.bazel b/ogr/ogrsf_frmts/geojson/BUILD.bazel
+new file mode 100644
+index 0000000000..8aba4d3777
+--- /dev/null
++++ b/ogr/ogrsf_frmts/geojson/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "geojson",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/ogrsf_frmts/geojson/libjson/BUILD.bazel b/ogr/ogrsf_frmts/geojson/libjson/BUILD.bazel
+new file mode 100644
+index 0000000000..76c0de6412
+--- /dev/null
++++ b/ogr/ogrsf_frmts/geojson/libjson/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "libjson",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/ogrsf_frmts/kml/BUILD.bazel b/ogr/ogrsf_frmts/kml/BUILD.bazel
+new file mode 100644
+index 0000000000..4cc4820ef0
+--- /dev/null
++++ b/ogr/ogrsf_frmts/kml/BUILD.bazel
+@@ -0,0 +1,26 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "kml",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++        exclude = [
++            "kml.cpp",
++            "kmlnode.cpp",
++            "kmlvector.cpp",
++        ],
++    ),
++)
+diff --git a/ogr/ogrsf_frmts/mem/BUILD.bazel b/ogr/ogrsf_frmts/mem/BUILD.bazel
+new file mode 100644
+index 0000000000..46baa8a029
+--- /dev/null
++++ b/ogr/ogrsf_frmts/mem/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "mem",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/ogrsf_frmts/mitab/BUILD.bazel b/ogr/ogrsf_frmts/mitab/BUILD.bazel
+new file mode 100644
+index 0000000000..b428f0a0fd
+--- /dev/null
++++ b/ogr/ogrsf_frmts/mitab/BUILD.bazel
+@@ -0,0 +1,19 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "mitab",
++    srcs = glob([
++        "*.c",
++        "*.cpp",
++    ]),
++)
+diff --git a/ogr/ogrsf_frmts/shape/BUILD.bazel b/ogr/ogrsf_frmts/shape/BUILD.bazel
+new file mode 100644
+index 0000000000..34fd33ac50
+--- /dev/null
++++ b/ogr/ogrsf_frmts/shape/BUILD.bazel
+@@ -0,0 +1,31 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++        "dbfopen.c",
++        "shptree.c",
++        "shpopen.c",
++        "sbnsearch.c",
++    ]),
++)
++
++filegroup(
++    name = "shape",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++        exclude = [
++            "dbfopen.c",
++            "shptree.c",
++            "shpopen.c",
++            "sbnsearch.c",
++        ],
++    ),
++)
+diff --git a/ogr/ogrsf_frmts/vrt/BUILD.bazel b/ogr/ogrsf_frmts/vrt/BUILD.bazel
+new file mode 100644
+index 0000000000..bfda5dff39
+--- /dev/null
++++ b/ogr/ogrsf_frmts/vrt/BUILD.bazel
+@@ -0,0 +1,21 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++        "*.hpp",
++    ]),
++)
++
++filegroup(
++    name = "vrt",
++    srcs = glob(
++        [
++            "*.c",
++            "*.cpp",
++        ],
++    ),
++)
+diff --git a/port/BUILD.bazel b/port/BUILD.bazel
+new file mode 100644
+index 0000000000..5655145794
+--- /dev/null
++++ b/port/BUILD.bazel
+@@ -0,0 +1,64 @@
++load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template_rule")
++load("@rules_cc//cc:defs.bzl", "cc_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++expand_template_rule(
++    # A unique name for this target.
++    name = "cpl_config_generate",
++    # The template file to expand.
++    out = "cpl_config.h",
++    substitutions = {
++        "cmakedefine": "define",
++        "@GDAL_PREFIX@": "/usr/local",
++        "@SIZEOF_INT@": "4",  # gdal is hardcoded to accept this value 🤷
++        "@SIZEOF_UNSIGNED_LONG@": "8",
++        "@SIZEOF_VOIDP@": "8",
++        "@SIZEOF_SIZE_T@": "8",
++        "@SIZEOF_LONG_INT@": "8",
++        "@VSI_STAT64_T@": "stat64",
++        "@VSI_STAT64@": "stat64",
++        "@ICONV_CPP_CONST@": "",
++        "@VSI_FOPEN64@": "fopen",
++        "@VSI_FTRUNCATE64@": "ftruncate",
++        "@VSI_FSEEK64@": "fseek",
++        "@VSI_FTELL64@": "ftell",
++        "@HAVE_GCC_WARNING_ZERO_AS_NULL_POINTER_CONSTANT@": "1",
++        "@CPL_CONFIG_EXTRAS@": "",
++        "HAVE_DIRECT_H 1": "_HAVE_DIRECT_H 0",
++        "HAVE_XLOCALE_H 1": "_HAVE_XLOCALE_H 0",
++        "WORDS_BIGENDIAN 1": "_WORDS_BIGENDIAN 0",
++
++        # darwinonly
++        #        "HAVE_SCHED_GETAFFINITY 1": "_HAVE_SCHED_GETAFFINITY 1",
++    },
++    template = "//cmake/template:cpl_config_template",
++)
++
++filegroup(
++    name = "headers",
++    srcs = glob(
++        [
++            "*.h",
++            "*.hpp",
++        ],
++        exclude = ["cpl_odbc.h"],
++    ) + [
++        ":cpl_config_generate",
++    ],
++)
++
++filegroup(
++    name = "port",
++    srcs = glob(
++        ["*.cpp"],
++        exclude = [
++            "*win32.cpp",
++            "cpl_odbc.cpp",
++            #            "cpl_vsil_gzip.cpp",
++            #            "cpl_minizip_ioapi.cpp",
++            #            "cpl_minizip_unzip.cpp",
++            #            "cpl_minizip_zip.cpp",
++        ],
++    ),
++)
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000000..2eb4ff5c6b
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,4 @@
++# This file was autogenerated by uv via the following command:
++#    uv pip compile swig/python/pyproject.toml --output-file requirements.txt --all-extras
++numpy==1.26.4
++    # via gdal (swig/python/pyproject.toml)
+diff --git a/swig/BUILD.bazel b/swig/BUILD.bazel
+new file mode 100644
+index 0000000000..6e7633bfe0
+--- /dev/null
++++ b/swig/BUILD.bazel
+@@ -0,0 +1 @@
++# This file intentionally left blank
+diff --git a/swig/include/BUILD.bazel b/swig/include/BUILD.bazel
+new file mode 100644
+index 0000000000..fa03a491cd
+--- /dev/null
++++ b/swig/include/BUILD.bazel
+@@ -0,0 +1,22 @@
++package(default_visibility = ["//:__subpackages__"])
++
++sources = [
++    "gdal.i",
++    "gdalconst.i",
++    "gnm.i",
++    #    "ogr.i",
++    #    "osr.i",
++]
++
++filegroup(
++    name = "include",
++    srcs = glob(
++        [
++            "*.i",
++        ],
++        allow_empty = False,
++        exclude = sources,
++    ),
++)
++
++exports_files(sources)
+diff --git a/swig/include/python/BUILD.bazel b/swig/include/python/BUILD.bazel
+new file mode 100644
+index 0000000000..864a41192c
+--- /dev/null
++++ b/swig/include/python/BUILD.bazel
+@@ -0,0 +1,12 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "python",
++    srcs = glob(
++        [
++            "docs/*i",
++            "*.i",
++        ],
++        allow_empty = False,
++    ),
++)
+diff --git a/swig/python/gdal-utils/osgeo_utils/BUILD.bazel b/swig/python/gdal-utils/osgeo_utils/BUILD.bazel
+new file mode 100644
+index 0000000000..3882360aa5
+--- /dev/null
++++ b/swig/python/gdal-utils/osgeo_utils/BUILD.bazel
+@@ -0,0 +1,13 @@
++load("@rules_python//python:defs.bzl", "py_binary")
++
++package(default_visibility = ["//visibility:public"])
++
++py_binary(
++    name = "gdal_calc",
++    srcs = [":gdal_calc.py"],
++    imports = [
++        "..",
++        "../..",
++    ],
++    deps = ["//swig/python/gdal-utils/osgeo_utils/auxiliary"],
++)
+diff --git a/swig/python/gdal-utils/osgeo_utils/auxiliary/BUILD.bazel b/swig/python/gdal-utils/osgeo_utils/auxiliary/BUILD.bazel
+new file mode 100644
+index 0000000000..2792783ba2
+--- /dev/null
++++ b/swig/python/gdal-utils/osgeo_utils/auxiliary/BUILD.bazel
+@@ -0,0 +1,15 @@
++load("@rules_python//python:defs.bzl", "py_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++py_library(
++    name = "auxiliary",
++    srcs = glob(
++        ["*.py"],
++        allow_empty = False,
++    ),
++    deps = [
++        "//swig/python/osgeo",
++        "@gdal_python_deps//numpy",
++    ],
++)
+diff --git a/swig/python/osgeo/BUILD.bazel b/swig/python/osgeo/BUILD.bazel
+new file mode 100644
+index 0000000000..d0df87434f
+--- /dev/null
++++ b/swig/python/osgeo/BUILD.bazel
+@@ -0,0 +1,28 @@
++load("//swig:swig.bzl", "swig_python_bindings")
++load("@rules_python//python:defs.bzl", "py_library")
++
++package(default_visibility = ["//:__subpackages__"])
++
++_modules = [
++    "gdal",
++    "gdalconst",
++    "ogr",
++    "gdal_array",
++    "gnm",
++    "osr",
++]
++
++swig_python_bindings(
++    module_names = _modules,
++)
++
++py_library(
++    name = "osgeo",
++    srcs = [
++        "__init__.py",
++    ] + _modules,
++    data = [
++        "_{}.so".format(modname)
++        for modname in _modules
++    ],
++)
+diff --git a/swig/python/pyproject.toml b/swig/python/pyproject.toml
+index 07ce63e756..0392473353 100644
+--- a/swig/python/pyproject.toml
++++ b/swig/python/pyproject.toml
+@@ -35,7 +35,7 @@ classifiers = [
+ requires-python = ">=3.8"
+ 
+ [project.optional-dependencies]
+-numpy = ['numpy>1.0.0']
++numpy = ['numpy>1.0.0,<2']
+ 
+ [project.urls]
+ Homepage = "https://gdal.org"
+diff --git a/swig/swig.bzl b/swig/swig.bzl
+new file mode 100644
+index 0000000000..743a1df29c
+--- /dev/null
++++ b/swig/swig.bzl
+@@ -0,0 +1,173 @@
++## https://github.com/tensorflow/tensorflow/blob/v0.6.0/tensorflow/tensorflow.bzl
++
++load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
++load("@bazel_skylib//lib:sets.bzl", "sets")
++load("@bazel_skylib//lib:paths.bzl", "paths")
++load("@aspect_bazel_lib//lib:copy_directory.bzl", "copy_directory_bin_action")
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
++
++def _extract_numpy_impl(ctx):
++    """unzips numpy wheel"""
++
++    extracted = ctx.actions.declare_directory(ctx.attr.name)
++    ctx.actions.run(
++        executable = "unzip",
++        inputs = [ctx.file.numpy],
++        outputs = [extracted],
++        arguments = ["-q", ctx.file.numpy.path, "-d", extracted.path],
++        mnemonic = "unzip",
++    )
++
++    return [
++        DefaultInfo(files = depset(direct = [extracted])),
++    ]
++
++_extract_numpy_headers = rule(
++    attrs = {
++        "numpy": attr.label(
++            default = "@gdal_python_deps//numpy:whl",
++            allow_single_file = True,
++            doc = "numpy wheel to get headers from to build gdal_array.i",
++        ),
++    },
++    doc = "extracts the given numpy wheel",
++    implementation = _extract_numpy_impl,
++    toolchains = ["@aspect_bazel_lib//lib:copy_directory_toolchain_type"],
++)
++
++# Bazel rules for building swig files.
++def gen_swig_python_impl(ctx):
++    module_name = ctx.attr.module_name
++
++    # An initial c++ template file is created for swig, which is then modified further down
++    cc_out_tmp = ctx.actions.declare_file(ctx.attr.name + ".cpp.tmpl")
++    py_out = ctx.actions.declare_file(ctx.attr.name + ".py")
++    args = ["-c++", "-python"]
++    args += ["-module", module_name]
++
++    includes_folders = sets.to_list(sets.make([paths.dirname(f.path) for f in ctx.files.swig_includes + ctx.files._swig_deps]))
++
++    # Reverse them because we want the specific python ones ot be included first
++    includes_folders = includes_folders[::-1]
++    args += ["-I" + d for d in includes_folders]
++
++    # Add any C header deps and deduplicate
++    cc_includes = []
++    for dep in ctx.attr.cdeps:
++        cc_includes += dep[CcInfo].compilation_context.headers.to_list()
++    cc_includes = sets.to_list(sets.make(cc_includes))
++
++    cc_include_dirs = [h.dirname for h in cc_includes]
++
++    args += ["-I" + x for x in cc_include_dirs]
++    args += ["-o", cc_out_tmp.path]
++    args += ["-outdir", py_out.dirname]
++    args += [ctx.file.src.path]
++
++    ctx.actions.run(
++        executable = ctx.executable.swig_binary,
++        arguments = args,
++        mnemonic = "PythonSwig",
++        inputs = ctx.files.src +
++                 cc_includes +
++                 ctx.files.swig_includes +
++                 ctx.files._swig_deps,
++        outputs = [cc_out_tmp, py_out],
++        progress_message = "SWIGing",
++    )
++
++    cc_out = ctx.actions.declare_file(ctx.attr.name + ".cpp")
++    ctx.actions.expand_template(
++        template = cc_out_tmp,
++        output = cc_out,
++        # See swig/python/modify_cpp_files.cmake
++        substitutions = {
++            "PyObject *resultobj = 0;": "PyObject *resultobj = 0; int bLocalUseExceptionsCode = GetUseExceptions();",
++            "obj = PyUnicode_AsUTF8String(obj);": "obj = PyUnicode_AsUTF8String(obj); if (!obj) return SWIG_TypeError;",
++            "return resultobj;": "if ( ReturnSame(bLocalUseExceptionsCode) ) { CPLErr eclass = CPLGetLastErrorType(); if ( eclass == CE_Failure || eclass == CE_Fatal ) { Py_XDECREF(resultobj); SWIG_Error( SWIG_RuntimeError, CPLGetLastErrorMsg() ); return NULL; } }\n  return resultobj;",
++            "if (--interpreter_counter != 0) // another sub-interpreter may still be using the swig_module's types": "/* Even Rouault / GDAL hack for SWIG >= 4.1 related to objects not being freed. See swig/python/modify_cpp_files.cmake for more details */\nif( 1 )",
++        },
++    )
++
++    return [
++        DefaultInfo(files = depset(direct = [cc_out, py_out])),
++    ]
++
++_gen_swig_python = rule(
++    attrs = {
++        "src": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++        ),
++        "swig_includes": attr.label_list(
++            allow_files = True,
++        ),
++        "cdeps": attr.label_list(
++            allow_files = True,
++            providers = [CcInfo],
++        ),
++        "_swig_deps": attr.label_list(
++            default = [
++                "@swig//:lib_python",
++            ],
++        ),
++        "module_name": attr.string(mandatory = True),
++        "py_module_name": attr.string(mandatory = True),
++        "swig_binary": attr.label(
++            default = "@swig//:swig",
++            cfg = "exec",
++            executable = True,
++            allow_files = True,
++        ),
++    },
++    doc = "Swigs the given .i file in src into a .py and .cpp file",
++    implementation = gen_swig_python_impl,
++)
++
++def swig_python_bindings(*, module_names):
++    """Generate swig bindings for each GDAL module"""
++
++    _extract_numpy_headers(
++        name = "numpy_headers",
++    )
++
++    for modname in module_names:
++        _gen_swig_python(
++            name = modname,
++            src = "//swig/include:{}.i".format(modname),
++            cdeps = ["//:gdal_core"],
++            module_name = modname,
++            py_module_name = modname,
++            swig_includes = [
++                "//swig/include",
++                "//swig/include/python",
++            ],
++        )
++
++        # Generate C swig bindings
++        cc_library(
++            name = "{}.so".format(modname),
++            srcs = [modname],
++            hdrs = [":numpy_headers"],
++            copts = [
++                # Generate multiple include paths for different scenarios
++                "-I$(GENDIR)/{basedir}/swig/python/osgeo/numpy_headers/numpy/{include_folder}".format(basedir = basedir, include_folder = include_folder)
++                # Allow building in-tree and from an external repo
++                for basedir in ["", "external/gdal+"]
++                # Allow using numpy v1 and numpy v2
++                for include_folder in ["core/include", "_core/include"]
++            ],
++            deps = [
++                "//:gdal_core",
++                "//apps",
++                # See https://github.com/bazelbuild/rules_python/issues/824
++                "@rules_python//python/cc:current_py_cc_headers",
++            ],
++        )
++
++        # Rename from `lib_gdal.so` to `_gdal.so` for swig imports
++        cc_shared_library(
++            name = "_{}.so".format(modname),
++            shared_lib_name = "_{}.so".format(modname),
++            deps = ["{}.so".format(modname)],
++        )
+diff --git a/third_party/LercLib/BUILD.bazel b/third_party/LercLib/BUILD.bazel
+new file mode 100644
+index 0000000000..084ad2d9f1
+--- /dev/null
++++ b/third_party/LercLib/BUILD.bazel
+@@ -0,0 +1,15 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob([
++        "*.h",
++    ]),
++)
++
++filegroup(
++    name = "LercLib",
++    srcs = glob([
++        "*.cpp",
++    ]),
++)
+diff --git a/third_party/fast_float/BUILD.bazel b/third_party/fast_float/BUILD.bazel
+new file mode 100644
+index 0000000000..31f1ceb554
+--- /dev/null
++++ b/third_party/fast_float/BUILD.bazel
+@@ -0,0 +1,14 @@
++package(default_visibility = ["//:__subpackages__"])
++
++filegroup(
++    name = "headers",
++    srcs = glob(
++        ["*.h"],
++        allow_empty = False,
++    ),
++)
++
++filegroup(
++    name = "fast_float",
++    srcs = [":headers"],
++)

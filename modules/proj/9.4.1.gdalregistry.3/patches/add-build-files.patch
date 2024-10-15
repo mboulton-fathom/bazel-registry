@@ -1,6 +1,6 @@
 diff --git a/BUILD.bazel b/BUILD.bazel
 new file mode 100644
-index 00000000..0ca86779
+index 00000000..974f4363
 --- /dev/null
 +++ b/BUILD.bazel
 @@ -0,0 +1,56 @@
@@ -22,8 +22,8 @@ index 00000000..0ca86779
 +        "${PACKAGE_NAME}": "proj",
 +        "${PACKAGE_TARNAME}": "proj",
 +        "${PACKAGE_VERSION}": "0.0.1",
-+        # "${VERSION}": "9.3.1",
-+        "${PACKAGE_STRING}": "proj-9.3.1",
++        # "${VERSION}": "9.4.1",
++        "${PACKAGE_STRING}": "proj-9.4.1",
 +    },
 +    template = "cmake/proj_config.cmake.in",
 +)
@@ -60,27 +60,12 @@ index 00000000..0ca86779
 +    visibility = ["//visibility:public"],
 +    deps = ["@sqlite3"],
 +)
-diff --git a/MODULE.bazel b/MODULE.bazel
-new file mode 100644
-index 00000000..27638351
---- /dev/null
-+++ b/MODULE.bazel
-@@ -0,0 +1,9 @@
-+module(
-+    name = "proj",
-+    version = "9.4.1",
-+)
-+
-+bazel_dep(name = "buildozer", version = "7.1.2")
-+bazel_dep(name = "aspect_bazel_lib", version = "2.7.8")
-+bazel_dep(name = "rules_cc", version = "0.0.9")
-+bazel_dep(name = "sqlite3", version = "3.42.0.bcr.1")
 diff --git a/data/BUILD.bazel b/data/BUILD.bazel
 new file mode 100644
-index 00000000..61fde17b
+index 00000000..9a911a4b
 --- /dev/null
 +++ b/data/BUILD.bazel
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,77 @@
 +load("@aspect_bazel_lib//lib:tar.bzl", "tar")
 +
 +genrule(
@@ -88,7 +73,6 @@ index 00000000..61fde17b
 +    srcs = [
 +        "sql/begin.sql",
 +        "sql/proj_db_table_defs.sql",
-+        "sql/consistency_checks_triggers.sql",
 +        "sql/conversion_triggers.sql",
 +        "sql/customizations_early.sql",
 +        "sql/metadata.sql",
@@ -136,7 +120,7 @@ index 00000000..61fde17b
 +    cmd = """
 +set -eu
 +cat $(SRCS) > all.sql
-+sed -i 's/$${PROJ_VERSION}/9.3.1/g' all.sql
++sed -i 's/$${PROJ_VERSION}/9.4.1/g' all.sql
 +$(location @sqlite3//:shell) $(location proj.db) < all.sql
 +    """,
 +    tools = ["@sqlite3//:shell"],

@@ -1,17 +1,13 @@
 {
-    "homepage": "https://github.com/ebiggers/libdeflate",
-    "maintainers": [
-        {
-            "email": "julian.amann@tum.de",
-            "github": "Vertexwahn",
-            "name": "Julian Amann"
-        }
-    ],
-    "repository": [
-        "github:ebiggers/libdeflate"
-    ],
-    "versions": [
-        "1.21.gdalregistry.1"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/ebiggers/libdeflate",
+  "maintainers": [
+    {
+      "email": "julian.amann@tum.de",
+      "github": "Vertexwahn",
+      "name": "Julian Amann"
+    }
+  ],
+  "repository": ["github:ebiggers/libdeflate"],
+  "versions": ["1.21.gdalregistry.1"],
+  "yanked_versions": {}
 }
